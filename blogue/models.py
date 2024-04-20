@@ -19,7 +19,7 @@ class Post(models.Model):
         ('draft', 'Draft'),
         ('published', 'Published')
     )
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200) # attribut
     # utile pour gérer les urls de manière dynamique
     slug = models.SlugField(max_length=200) 
     body = models.TextField()
@@ -33,3 +33,7 @@ class Post(models.Model):
     publish = models.DateTimeField(default=timezone.now())
     # models.CASCADE signifie lorsqu'on supprime un utilisateur tout ces posts seront supp
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posted")
+    
+    # cette méthode permet de representer l'objet en chaine de caractère au niveau de DB
+    def __str__(self) -> str:
+        return self.title
