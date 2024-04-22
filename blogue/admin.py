@@ -1,8 +1,14 @@
 from django.contrib import admin
 
-from blogue.models import Post, Comment
+from blogue.models import Post, Comment, Category
 # Register your models here.
 
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug')
+    prepopulated_fields = {'slug': ('name',)}
+    
+    
 # admin.site.register(Post)
 # cette manière de faire nous permet de personnaliser la table Post
 @admin.register(Post) # il s'agit d'un décorateur

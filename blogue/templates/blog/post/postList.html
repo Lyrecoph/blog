@@ -5,8 +5,11 @@
   <header class="py-5 bg-light border-bottom mb-4">
     <div class="container">
       <div class="text-center my-5">
-        <h1 class="fw-bolder">Welcome to Blog Home!</h1>
-        <p class="lead mb-0">A Bootstrap 5 starter layout for your next blog homepage</p>
+        <h1 class="fw-bolder">Bienvenue sur le blog de Phidias !</h1>
+        <p class="lead mb-0">Céci est une formation dedié au framework Django</p>
+        {% if category %}
+          <p>Articles dédie au language {{category}}</p>
+        {% endif %}
       </div>
     </div>
   </header>
@@ -64,20 +67,14 @@
                   <div class="card-header">Categories</div>
                   <div class="card-body">
                       <div class="row">
-                          <div class="col-sm-6">
-                              <ul class="list-unstyled mb-0">
-                                  <li><a href="#!">Web Design</a></li>
-                                  <li><a href="#!">HTML</a></li>
-                                  <li><a href="#!">Freebies</a></li>
-                              </ul>
-                          </div>
-                          <div class="col-sm-6">
-                              <ul class="list-unstyled mb-0">
-                                  <li><a href="#!">JavaScript</a></li>
-                                  <li><a href="#!">CSS</a></li>
-                                  <li><a href="#!">Tutorials</a></li>
-                              </ul>
-                          </div>
+                        {% for cat in categories  %}
+                            <div class="col-sm-6">
+                                <ul class="list-unstyled mb-0">
+                                    <li><a href="{% url 'category_post_list' cat.slug %}">{{cat.name}}</a></li>
+                                </ul>
+                            </div>
+                        {% endfor %}
+                          
                       </div>
                   </div>
               </div>

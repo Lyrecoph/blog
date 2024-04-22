@@ -14,6 +14,19 @@ from django.contrib.auth.models import User
 # alors que select_name rend votre code performant mais possible d'utiliser les deux
 # comme select_name('posted') avec posted definir au niveau de related_name('posted')
 
+class Category(models.Model):
+    name = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200)
+    
+    class Meta:
+        verbose_name = "Category"
+        verbose_name_plural = "Categories"
+        
+    def __str__(self) -> str:
+        return self.name
+    
+    
+    
 class Post(models.Model):
     STATUS_CHOICES = (
         ('draft', 'Draft'),
@@ -33,6 +46,7 @@ class Post(models.Model):
     publish = models.DateTimeField(default=timezone.now())
     # models.CASCADE signifie lorsqu'on supprime un utilisateur tout ces posts seront supp
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posted")
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="posts")
     
     # cette méthode permet de representer l'objet en chaine de caractère au niveau de DB
     def __str__(self) -> str:

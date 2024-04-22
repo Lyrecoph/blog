@@ -1,18 +1,29 @@
 from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from blogue.models import Post, Comment
+from blogue.models import Post, Comment, Category
 from blogue.forms import CommentForm
 # Create your views here.
 # Pour définir une vue nous avons deux méthodes : vue fondé sur les classes et
 # vue fondé sur les méthodes
 
-# Fonction qui permet d'afficher la liste des publications
-def post_list(request):
-    object_list = Post.objects.all()
+# Fonction joue un double rôle, il permet d'afficher la liste des publications et 
+# il permet d'afficher la liste des publications par categorie
+def post_list(request, category=None):
+    posts = Post.objects.all()
+    # recupère la liste des categories
+    categories = Category.objects.all()
+    # si la category recupere en paramètre existe alors
+    if category:
+        # recupère moi tout la categorie dont le slug correspond au nom de la categorie
+        # passer en paramètre dans le cas contraire elève une exception d'ou la présence 
+        # du get_object_or_404
+        category = get_object_or_404(Category, slug=category)
+        # ensuite recupère moi tout les publications liés à cette categorie
+        posts = posts.filter(category=category)
     # instancier la classe paginator qui prend en paramètre la liste des publication
     # et le nbre d'élément par page
-    paginator = Paginator(object_list, 2)
+    paginator = Paginator(posts, 2)
     # renvoie la page courante
     page = request.GET.get('page') 
     try:
@@ -28,7 +39,7 @@ def post_list(request):
         # la nouvelle liste de publication sera egale à la liste des publication 
         # de la dernière page (num_pages)
         posts = paginator.page(paginator.num_pages) 
-    context = {'posts': posts, 'page': page}
+    context = {'posts': posts, 'page': page, 'categories': categories, 'category': category}
     return render(request, 'blog/post/postList.html', context)
 
 # Fonction qui permet d'afficher le détail d'une publication
