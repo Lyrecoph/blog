@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
+from django.urls import reverse
 # Create your models here.
 
 # il est préferable d'uitlisateur la table user par défaut de django si dans 
@@ -19,15 +20,33 @@ class Category(models.Model):
     slug = models.SlugField(max_length=200)
     
     class Meta:
+        # permet de spécifie le nom de la table 
         verbose_name = "Category"
-        verbose_name_plural = "Categories"
+        # permet de spécifie le nom que prendra la table Category 
+        # au niveau de l'admin si celui contient plusieurs éléments
+        verbose_name_plural = "Categories" 
         
     def __str__(self) -> str:
         return self.name
     
+    # cette fonction permet de générer le slug de la categorie en fonction 
+    # du nom de la categorie
+    # def save(self, *args, **kwargs):
+    #     self.slug = self.name.lower().replace(' ', '-')
+    #     return super(Category, self).save(*args, **kwargs)
     
+    
+# Cette classe a été crée afin de permet de vérifier si la publication a été validé
+# par l'admin c'est à dire contient le statut published dans le cas contraire 
+# il sera pas publié, en général ModelManager permettent de personnaliser le comportement
+# des requêtes et d'ajouter des fonctionnalités supplémentaires aux modèles pour interagir
+# avec les données de la DB de manière flexible et puissante  
+class PublishedManager(models.Manager):
+    def get_queryset(self):
+        return super(PublishedManager, self).get_queryset().filter(status='published')
     
 class Post(models.Model):
+    # status choices contient deux choix en corbeille ou publié
     STATUS_CHOICES = (
         ('draft', 'Draft'),
         ('published', 'Published')
@@ -47,10 +66,25 @@ class Post(models.Model):
     # models.CASCADE signifie lorsqu'on supprime un utilisateur tout ces posts seront supp
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posted")
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="posts")
+    objects = models.Manager() # manager par defaut
+    # manager nous permettant de recuperer uniquement les posts publiés
+    published = PublishedManager() 
     
     # cette méthode permet de representer l'objet en chaine de caractère au niveau de DB
     def __str__(self) -> str:
         return self.title
+
+    # URL personnalisé ou canonique
+    # cette méthode permet de passer plusieurs arguments en une seule fois 
+    # et de les afficher au niveau de notre template
+    # en resumé: cette pratique de définir des URLs de manière à ce qu'elle soient
+    # significatives conviviales et coherents pour les utilisateurs et les moteurs de recherche
+    # cela implique généralement d'utiliser des URLs qui décrivent le contenu de la page
+    # de manière descriptive plutôt que des URls généres de manière aleatoire ou cryptique
+    def get_absolute_url(self):
+        # reverse permet d'injecter plusierus arguments au niveau d'un URL et de les capturer
+        # automatiquement dans notre template
+        return reverse('post_detail',args=[self.publish.year, self.publish.month, self.publish.day, self.slug])
 
 class Comment(models.Model):
     # models.CASCADE lorsqu'on supprimer un post ces commentaires sont supprimer

@@ -10,7 +10,9 @@ from blogue.forms import CommentForm
 # Fonction joue un double rôle, il permet d'afficher la liste des publications et 
 # il permet d'afficher la liste des publications par categorie
 def post_list(request, category=None):
-    posts = Post.objects.all()
+    # nous utilisons ici le manager published que nous avons crée nous même 
+    # qui permet de recuperer que les publications qui ont été publié
+    posts = Post.published.all()
     # recupère la liste des categories
     categories = Category.objects.all()
     # si la category recupere en paramètre existe alors
@@ -20,7 +22,7 @@ def post_list(request, category=None):
         # du get_object_or_404
         category = get_object_or_404(Category, slug=category)
         # ensuite recupère moi tout les publications liés à cette categorie
-        posts = posts.filter(category=category)
+        posts = posts.filter(category=category).order_by('-publish')
     # instancier la classe paginator qui prend en paramètre la liste des publication
     # et le nbre d'élément par page
     paginator = Paginator(posts, 2)
@@ -43,8 +45,13 @@ def post_list(request, category=None):
     return render(request, 'blog/post/postList.html', context)
 
 # Fonction qui permet d'afficher le détail d'une publication
-def detail_list(request, slug:str):
-    post = get_object_or_404(Post, slug=slug)
+def detail_list(request, year:int, month:int, day: int, slug:str):
+    # permet de recuperer les publications publié et dont le slug 
+    # correspond au slug, année, mois, jour passer en paramètre 
+    # [(publish__year):permet de filtrer les objets Post 
+    # pour ne récupérer que ceux qui ont été publiés pendant une année spécifique]
+    post = get_object_or_404(Post, slug=slug, status='published', 
+                             publish__year=year, publish__month=month, publish__day=day)
     # recupérer les commentaiires associés à la publication
     comments = Comment.objects.filter(post=post.id)
     new_comment = None

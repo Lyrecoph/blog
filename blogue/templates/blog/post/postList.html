@@ -39,7 +39,7 @@
                             <div class="small text-muted">{{post.publish}}</div>
                             <h2 class="card-title h4">{{post.title}}</h2>
                             <p class="card-text">{{post.body|truncatechars:30}}</p>
-                            <a class="btn btn-primary" href="{% url 'post_detail' post.slug %}">Read more →</a>
+                            <a class="btn btn-primary" href="{{post.get_absolute_url}}">Read more →</a>
                         </div>
                       </div>
                     
