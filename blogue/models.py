@@ -37,3 +37,15 @@ class Post(models.Model):
     # cette méthode permet de representer l'objet en chaine de caractère au niveau de DB
     def __str__(self) -> str:
         return self.title
+
+class Comment(models.Model):
+    # models.CASCADE lorsqu'on supprimer un post ces commentaires sont supprimer
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
+    username = models.CharField(max_length=100)
+    email = models.EmailField(max_length=200)
+    body = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    
+    def __str__(self) -> str:
+        return self.post.title

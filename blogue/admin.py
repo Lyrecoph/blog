@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from blogue.models import Post
+from blogue.models import Post, Comment
 # Register your models here.
 
 # admin.site.register(Post)
@@ -18,3 +18,7 @@ class PostAdmin(admin.ModelAdmin):
     ordering = ('status', 'author')
     #filtrer par date de creation, auteur ou date de publication
     list_filter = ('created', 'author', 'publish')
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('username', 'email', 'created')
