@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     
     "debug_toolbar",
     
+    'accounts.apps.AccountsConfig',
     'blogue.apps.BlogueConfig',
 ]
 
@@ -61,7 +62,7 @@ ROOT_URLCONF = 'blog.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -127,6 +128,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# configuration de debug toolbar etape 3
 STATICFILES_DIRS= [os.path.join(BASE_DIR, 'static')]
 
 # Default primary key field type
@@ -134,7 +136,7 @@ STATICFILES_DIRS= [os.path.join(BASE_DIR, 'static')]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
+# configuration de debug toolbar etape 4
 INTERNAL_IPS = [
     "127.0.0.1",
 ]

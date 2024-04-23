@@ -12,7 +12,7 @@ from blogue.forms import CommentForm
 def post_list(request, category=None):
     # nous utilisons ici le manager published que nous avons crée nous même 
     # qui permet de recuperer que les publications qui ont été publié
-    posts = Post.published.all()
+    posts = Post.published.all().order_by('-publish')
     # recupère la liste des categories
     categories = Category.objects.all()
     # si la category recupere en paramètre existe alors
@@ -22,7 +22,7 @@ def post_list(request, category=None):
         # du get_object_or_404
         category = get_object_or_404(Category, slug=category)
         # ensuite recupère moi tout les publications liés à cette categorie
-        posts = posts.filter(category=category).order_by('-publish')
+        posts = posts.filter(category=category)
     # instancier la classe paginator qui prend en paramètre la liste des publication
     # et le nbre d'élément par page
     paginator = Paginator(posts, 2)
