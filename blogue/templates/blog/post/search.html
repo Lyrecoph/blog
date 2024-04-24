@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container column">
+        <!-- si la variable query existe alors  -->
+        {% if query %}
+                <!--nous affichons sont contenues-->
+                <h1>Posts containing "{{query}}"</h1>
+                <h3>
+                    <!-- Avec le tag with nous créons une variable total_results 
+                    qui contient le nbre de resultats trouvé -->
+                    {% with results.count as total_result %}
+                        <!-- Affichons le nbre de resultat trouvé, si ce resultat est plus 
+                        d'un grâce au filtre pluralize on affiche le resultat au pluriel -->
+                        Found {{ total_result }} result{{ total_result|pluralize }}
+                    {% endwith %}
+                </h3>
+            <!--Ensuite on parcours la liste de resultat et on affiche 
+            son contenu à savoir post.publish: date de publication, post.title: 
+            titre de la publication ...-->
+            {% for post in results %}
+                <div class="d-flex">
+                    <div class="card mb-4 col-md-6">
+                        <a href="{{post.get_absolute_url}}"><img class="card-img-top" src="" alt="..." /></a>
+                        <div class="card-body">
+                            <div class="small text-muted">{{post.publish}}</div>
+                            <h2 class="card-title h4">{{post.title}}</h2>
+                            <p>{{post.body|safe|truncatechars:30}}</p>
+                            <a class="btn btn-primary" href="{{post.get_absolute_url}}">Read more →</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- si la vriable results qui est une liste est vide alors 
+                afin le message: There are no results for your query-->
+                {% empty %}
+                    <p>There are no results for your query</p>
+            {% endfor %}
+            <!-- Lorsqu'on click sur search again ça nous renvoie à nouveau 
+            un formulaire de recherche pour pouvoir rechercher encore le but ce lien 
+            est de permettre à utilisateur de recherche à nouveau une publication 
+            s'il n'a rien trouvé comme resultat-->
+            <p><a href="{% url 'post_search' %}">Search again</a></p>
+        {% else %}
+            <h3>Search for posts</h3>
+            <form method="get">
+                {{search_form.as_p}}
+                <input class="btn btn-primary mb-2" type="submit" value="Search">
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}

@@ -1,8 +1,9 @@
 from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank, TrigramSimilarity
 
 from blogue.models import Post, Comment, Category
-from blogue.forms import CommentForm
+from blogue.forms import CommentForm, PostSearchForm
 # Create your views here.
 # Pour définir une vue nous avons deux méthodes : vue fondé sur les classes et
 # vue fondé sur les méthodes
@@ -76,3 +77,53 @@ def detail_list(request, year:int, month:int, day: int, slug:str):
         'post':post, 'new_comment': new_comment, 
         'comment_form':comment_form, 'comments': comments})
     
+# Cette fonction permet de rechercher des publications, à noté que lorsque 
+# l'utilisateur fera une recherche il sera rediriger vers une page de recherche
+def post_search(request):
+    # cette variable sera utilisée pour stocker le terme de recherche saisi par l'utilisateur.
+    query = None
+    # va stocker les resultats de notre recherche
+    results = []
+    # lorsque la vue est appelé le formulaire est appelé
+    search_form = PostSearchForm()
+    # Vérifie si le paramètre 'query' est présent dans les données GET de la requête. 
+    # Cela signifie qu'un terme de recherche a été soumis. 
+    if 'query' in request.GET:
+        # recupère les données de mon formulaire et stock la dans une variable
+        # en d'autre terme Crée une nouvelle instance du formulaire PostSearchForm 
+        # en utilisant les données GET de la requête, ce qui permet 
+        # de pré-remplir le formulaire avec le terme de recherche soumis.
+        search_form = PostSearchForm(request.GET)
+        # ensuite verifie si les données de mon formulaire est valide
+        if search_form.is_valid():
+            # reécupère le terme de recherche proprement dit 
+            # à partir des données valides du formulaire
+            query = search_form.cleaned_data['query']
+            # combine les resultats de la recherche au niveau du titre et du body
+            # et s'il trouve le terme de recherche dans le titre ou le body classe
+            # en terme de poids (le champs ayant le poids A à plus de poids que le B)
+            vector_search = SearchVector('title', weight='A') + SearchVector('body', weight='B')
+            # crée un objet SearchQuery à partir du terme de recherche. 
+            # cet objet représente le terme de recherche lui-même et sera
+            # utilisé pour filtrer les résultats de la recherche.
+            query_search = SearchQuery(query)
+            # Cette ligne effectue la recherche proprement dite. Elle utilise annotate 
+            # pour ajouter une colonne virtuelle search à chaque objet Post de la requête,
+            # qui contient le résultat de la recherche. Ensuite, elle filtre les objets
+            # Post pour ne retourner que ceux qui correspondent 
+            # à la recherche (c'est-à-dire ceux pour lesquels search contient le terme 
+            # de recherche). Enfin, elle trie les résultats par ordre de pertinence (rank),
+            # en utilisant SearchRank pour calculer la pertinence de chaque résultat 
+            # par rapport au terme de recherche.
+            results = Post.published.annotate(search=vector_search, rank=SearchRank(vector_search, query_search)
+                                              ).filter(search=query_search).order_by('-rank')
+            
+            # retourne les publications qui contient ou à une similarité de 10% avec le terme de recherche
+            # results = Post.published.annotate(
+            # similarity=TrigramSimilarity("title", query),
+            # ).filter(
+            # similarity__gt=0.1
+            # ).order_by("-similarity")
+    return render(request, 'blog/post/search.html', 
+                  {'search_form': search_form, 'query': query, 'results': results})
+                                    
