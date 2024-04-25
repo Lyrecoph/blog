@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+        {% if post %}
+        Mise à jour du post "{{post.title}}"
+        {% else %}
+        <h4>Ajout du post</h4>
+        {% endif %}
+        <form action="." method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{form_post.as_p}}
+            <button type="submit" class="btn btn-primary mb-3">
+                {% if post %}
+                    Update Post
+                {% else %}
+                    Add Post
+                {% endif %}
+            </button>
+        </form>
+    </div>
+{% endblock%}

@@ -27,4 +27,4 @@ class PostAdmin(admin.ModelAdmin):
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('username', 'email', 'created')
+    list_display = ('created',)

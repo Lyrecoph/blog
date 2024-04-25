@@ -10,7 +10,14 @@
                     <!-- Post header-->
                     <header class="mb-4">
                         <!-- Post title-->
-                        <h1 class="fw-bolder mb-1">{{post.title}}</h1>
+                        <div class="row">
+                            <h1 class="fw-bolder mb-1 col-8">{{post.title}}</h1>
+                            <div class="row col-4">
+                                <a class="btn btn-secondary col-5 mx-1" href="{{post.get_absolute_url}}update/">Update</a>
+                                <a class="btn btn-danger col-5" href="">Delete</a>
+                            </div>
+                        </div>
+                        
                         <!-- Post meta content-->
                         <div class="text-muted fst-italic mb-2">Posted on {{post.publish}} by {{post.author.username}}</div>
                         <!-- Post categories-->
@@ -45,13 +52,18 @@
                                 </form>
                                 
                             {% endif %}
-                            <!-- Single comment-->
-                            {% for comment in comments  %}
+                            <!-- Single comment ajout du système de commentaire en temps réel
+                            en utilisant les évenement SSE javascript la logique se trouve en bas de la page -->
+                            <div class="comment"></div>
+
+                            <!-- Old Single comment-->
+                            <!-- Ajout du système de commentaire en utilisant django -->
+                            <!-- {% for comment in comments  %}
                                 <div class="d-flex mb-2">
                                     <div class="flex-shrink-0"><img class="rounded-circle" src="https://dummyimage.com/50x50/ced4da/6c757d.jpg" alt="..." /></div>
                                     <div class="ms-3">
                                         <div class="fw-bold">
-                                            # {{forloop.count}}{{comment.username}}
+                                            # {{forloop.count}}{{comment.author.username}}
                                             <span class="text-muted"> at {{comment.created}} </span>
                                         </div>
                                         {{comment.body}}
@@ -59,7 +71,7 @@
                                 </div>
                                 {% empty %}
                                 <h2>You don't have a comment yet</h2>
-                            {% endfor %}
+                            {% endfor %} -->
                         </div>
                     </div>
                 </section>
@@ -110,3 +122,71 @@
     <p><em>Pub Date: {{post.publish}}</em></p>
     <p><em>Author: {{post.author.username}}</em></p>
 {% endblock %}
+    
+{% block domReady %}
+    <!-- ce code crée une connexion SSE avec un serveur à l'aide de EventSource et écoute 
+    les événements envoyés par le serveur. Lorsqu'un événement est reçu, le message est affiché
+    dans la console du navigateur. -->
+    <script>
+        /* crée une nouvelle instance de EventSource qui établit une 
+        connexion avec l'URL spécifiée */  
+        var eventSource = new EventSource("{% url 'stream_comment' post.id %}");
+        /* C'est un gestionnaire d'événements qui est déclenché lorsque la connexion 
+        avec l'événement source est établie avec succès. */ 
+
+        /*eventSource.onopen = function(){
+            console.log('Ouverture de la source')
+        }*/
+
+        /* C'est un gestionnaire d'événements qui est déclenché à chaque fois qu'un message 
+        est reçu de l'événement source. Il parse le message en JSON (JSON.parse(e.data)) 
+        et construit le contenu HTML des commentaires à afficher. Il utilise une fonction 
+        buildContent pour créer la structure HTML de chaque commentaire et une fonction 
+        formatDate pour formater la date de création du commentaire. Enfin, il met à jour 
+        le contenu de la classe .comment dans le document HTML avec les nouveaux 
+        commentaires. */
+        eventSource.onmessage = function(e){
+            const resp = JSON.parse(e.data)
+            // initialisation de la variable conten
+            content = ''
+            if (resp?.length <= 0){
+                content = "<h2>You don't have a comment yet</h2>"
+            }else{
+                resp?.map(function(item, index){
+                    content +=buildContent((index+1),
+                            item['author__username'],
+                            item['body'],
+                            item['created'])
+                })
+            }
+            document.querySelector('.comment').innerHTML = content
+            /*console.log(resp)*/
+        }
+        /* C'est un gestionnaire d'événements qui est déclenché en cas d'erreur lors 
+        de la connexion avec l'événement source. */
+        /*eventSource.onerror = function(e){
+            console.error(e)
+        }*/
+        /* Construit la structure HTML d'un commentaire à partir des données de l'auteur,
+         du corps du commentaire et de la date de création. */
+        function buildContent(index, author, body, created){
+
+            const content = `
+                <div class="d-flex mb-2">
+                    <div class="flex-shrink-0"><img class="rounded-circle" src="https://dummyimage.com/50x50/ced4da/6c757d.jpg" alt="..." /></div>
+                    <div class="ms-3">
+                        <div class="fw-bold">#${index} ${author} <span class="text-muted">at ${formatDate(created)}</span></div>
+                        ${body}
+                    </div>
+                </div>
+            `
+            return content
+        }
+        /* Formate une date JavaScript en une chaîne de caractères lisible */
+        function formatDate(data){
+            let new_data = new Date(data);
+            return new_data.toUTCString().replace('GMT', '')
+        }
+    </script>
+{% endblock domReady %}
+

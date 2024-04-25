@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.utils.text import slugify
 # Create your models here.
 
 # il est préferable d'uitlisateur la table user par défaut de django si dans 
@@ -62,7 +63,7 @@ class Post(models.Model):
     # l'admin avant d'apparaitre au niveau du blog du coup par défaut c'est desactivé
     status = models.CharField(choices=STATUS_CHOICES, default='draft', max_length=10)
     # il s'agit de la date à laquelle l'admin décide de publier un post
-    publish = models.DateTimeField(default=timezone.now())
+    publish = models.DateTimeField(default=timezone.now)
     # models.CASCADE signifie lorsqu'on supprime un utilisateur tout ces posts seront supp
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posted")
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="posts")
@@ -73,7 +74,18 @@ class Post(models.Model):
     # cette méthode permet de representer l'objet en chaine de caractère au niveau de DB
     def __str__(self) -> str:
         return self.title
-
+    
+    # cette méthode permet de générer le slug de la publication en fonction du title
+    # on parle de surcharge de la méthode save() qui prend en paramètre *args et 
+    # **kwargs vu que nous ne connaissons par le nbre d'argument que prendra save
+    def save(self, *args, **kwargs):
+        # vérifie si l'instance de Post n'a pas déjà un slug défini 
+        if not self.slug:
+            # méthode slugify est utilisée pour générer un slug à partir du titre
+            # de l'article 
+            self.slug = slugify(self.title)
+        return super(Post, self).save(*args, **kwargs)
+    
     # URL personnalisé ou canonique
     # cette méthode permet de passer plusieurs arguments en une seule fois 
     # et de les afficher au niveau de notre template
@@ -89,8 +101,9 @@ class Post(models.Model):
 class Comment(models.Model):
     # models.CASCADE lorsqu'on supprimer un post ces commentaires sont supprimer
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
-    username = models.CharField(max_length=100)
-    email = models.EmailField(max_length=200)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    # username = models.CharField(max_length=100)
+    # email = models.EmailField(max_length=200)
     body = models.TextField()
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
