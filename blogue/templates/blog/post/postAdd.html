@@ -9,6 +9,8 @@
         {% endif %}
         <form action="." method="post" enctype="multipart/form-data">
             {% csrf_token %}
+            <!-- permet d'integrer au niveau de notre body un editeur de texte riche CKEditor  -->
+            {{form_post.media}}
             {{form_post.as_p}}
             <button type="submit" class="btn btn-primary mb-3">
                 {% if post %}

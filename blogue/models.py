@@ -3,6 +3,8 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.text import slugify
+
+from ckeditor.fields import RichTextField
 # Create your models here.
 
 # il est préferable d'uitlisateur la table user par défaut de django si dans 
@@ -55,7 +57,8 @@ class Post(models.Model):
     title = models.CharField(max_length=200) # attribut
     # utile pour gérer les urls de manière dynamique
     slug = models.SlugField(max_length=200) 
-    body = models.TextField()
+    # utilise un, editeur de texte riche (CKEditor)
+    body = RichTextField()
     # la date serait automatiquement ajouté
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)

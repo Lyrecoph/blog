@@ -30,7 +30,8 @@
                     <figure class="mb-4"><img class="img-fluid rounded" src="https://dummyimage.com/900x400/ced4da/6c757d.jpg" alt="..." /></figure>
                     <!-- Post content-->
                     <section class="mb-5">
-                        <p class="fs-5 mb-4">{{post.body}}</p>
+                        <!-- safe permet d'echapper le contenu de notre html -->
+                        <p class="fs-5 mb-4">{{post.body|safe}}</p>
                     </section>
                 </article>
                 <!-- Comments section-->

@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.postgres',
     
     "debug_toolbar",
+    "ckeditor",
     
     'accounts.apps.AccountsConfig',
     'blogue.apps.BlogueConfig',
@@ -131,6 +132,8 @@ STATIC_URL = 'static/'
 
 # configuration de debug toolbar etape 3
 STATICFILES_DIRS= [os.path.join(BASE_DIR, 'static')]
+
+STATIC_ROOT = os.path.join(BASE_DIR,'static/static')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
