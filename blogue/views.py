@@ -6,11 +6,13 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponseRedirect, StreamingHttpResponse
 
 from django.core.serializers.json import DjangoJSONEncoder
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank, TrigramSimilarity
+from django.core.mail import send_mail
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank,\
+    TrigramSimilarity
 
 
 from blogue.models import Post, Comment, Category
-from blogue.forms import CommentForm, PostSearchForm, PostForm
+from blogue.forms import CommentForm, PostSearchForm, PostForm, EmailPostForm
 # Create your views here.
 # Pour définir une vue nous avons deux méthodes : vue fondé sur les classes et
 # vue fondé sur les méthodes
@@ -233,7 +235,7 @@ def post_update(request, year:int, month:int, day: int, slug:str):
     return render(request, 'blog/post/postAdd.html', context)
 
 
-# Cette vue permet à un client (comme un navigateur web) de se connecter à cette vue 
+# Cette fonction permet à un client (comme un navigateur web) de se connecter à cette vue 
 # et de recevoir des mises à jour en temps réel sur les commentaires associés à un post
 # spécifique. Chaque fois qu'un nouveau commentaire est ajouté ou modifié, 
 # le flux d'événements SSE envoie les données mises à jour au client, 
@@ -265,3 +267,44 @@ def stream_comment_view(request, post_id):
     # La vue retourne un objet StreamingHttpResponse qui utilise le générateur 
     # event_stream comme source de données pour le flux d'événements SSE.
     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+
+# cette fonction permet aux utilisateurs d'envoyer un article de blog par e-mail 
+# en remplissant un formulaire, puis envoie l'e-mail à l'auteur de l'article avec
+# un message personnalisé.
+def email_post(request, post_id:int):
+    # récupère l'objet Post correspondant à l'identifiant post_id ou retourne 
+    # une page d'erreur 404 si l'objet n'existe pas.
+    post = get_object_or_404(Post, pk=post_id)
+    # initialise la variable sent à False, qui sera utilisée pour indiquer 
+    # si l'e-mail a été envoyé avec succès.
+    sent = False
+    # si un formulaire a été soumis
+    if request.method == 'POST':
+        # récupère les données du formulaire dans une variable form_post
+        form_post = EmailPostForm(request.POST)
+        # si les données du formulaire sont valide 
+        if form_post.is_valid():
+            # récupère les données nettoyées du formulaire.
+            cd = form_post.cleaned_data
+            # construit l'URL absolue de l'article de blog pour l'inclure 
+            # dans le message d'e-mail
+            post_url = request.build_absolute_uri(post.get_absolute_url())
+            # construit le sujet de l'e-mail en incluant le nom de l'expéditeur 
+            # et le titre de l'article.
+            subject = f"{cd['name']} vous recommande de lire {post.title}"
+            # construit le corps de l'e-mail en incluant l'URL de l'article, 
+            # le nom de l'expéditeur et son commentaire.
+            message = f"Vous avez reçu un nouveau partage d'article sur {post_url}\n\n" \
+                      f"{cd['name']} a laissé ce commentaire: {cd['comments']}" 
+            # Envoie l'e-mail en utilisant la fonction send_mail de Django 
+            # avec le sujet, le message, l'adresse e-mail de l'expéditeur 
+            # et l'adresse e-mail du destinataire.
+            send_mail(subject, message, cd['email'], [cd['to']])
+            # Met à jour la variable sent pour indiquer que l'e-mail a été envoyé avec succès.
+            sent = True
+    # si un formulaire n'a pas été soumis renvoie moi un formulaire vide.
+    else:
+        form_post = EmailPostForm()
+    # rend la page 'emailPost.html' avec le formulaire, l'état d'envoi de l'e-mail 
+    # et les détails de l'article de blog pour affichage à l'utilisateur.
+    return render(request, 'blog/post/emailPost.html', {'form_post':form_post,'sent':sent, 'post':post})

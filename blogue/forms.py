@@ -31,3 +31,13 @@ class PostForm(forms.ModelForm):
     class Meta:
         model = Post
         fields = ['title', 'body', 'category']
+        
+# Cette classe nous permet d'envoyer un email
+class EmailPostForm(forms.Form):
+    # nom de celui qui veut partager la publication
+    name = forms.CharField(max_length=20)
+    email = forms.EmailField()
+    # celui a qui nous voulons envoyer le mail
+    to = forms.EmailField()
+    # le commentaire que celui qui envoie l'email doit mettre
+    comments = forms.CharField(max_length=500, widget=forms.Textarea)
