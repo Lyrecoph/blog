@@ -4,6 +4,7 @@ from blogue import views
 urlpatterns = [
     path("", views.post_list, name="post_list"),
     path("category/<slug:category>/", views.post_list, name="category_post_list"),
+    path("tag/<slug:tag_slug>/", views.post_list, name="tag_post_list"),
     path("<int:year>/<int:month>/<int:day>/<slug>/", views.detail_list, name="post_detail"),
     path("<int:year>/<int:month>/<int:day>/<slug>/update/", 
          views.post_update, name="post_update"),

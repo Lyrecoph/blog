@@ -30,7 +30,7 @@ class PostForm(forms.ModelForm):
     
     class Meta:
         model = Post
-        fields = ['title', 'body', 'category']
+        fields = ['title', 'body', 'category', 'tags', ]
         
 # Cette classe nous permet d'envoyer un email
 class EmailPostForm(forms.Form):

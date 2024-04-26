@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     
     "debug_toolbar",
     "ckeditor",
+    "taggit",
     
     'accounts.apps.AccountsConfig',
     'blogue.apps.BlogueConfig',

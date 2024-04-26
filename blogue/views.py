@@ -10,6 +10,8 @@ from django.core.mail import send_mail
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank,\
     TrigramSimilarity
 
+# Les librairies tierces
+from taggit.models import Tag
 
 from blogue.models import Post, Comment, Category
 from blogue.forms import CommentForm, PostSearchForm, PostForm, EmailPostForm
@@ -19,20 +21,29 @@ from blogue.forms import CommentForm, PostSearchForm, PostForm, EmailPostForm
 
 # Fonction joue un double rôle, il permet d'afficher la liste des publications et 
 # il permet d'afficher la liste des publications par categorie
-def post_list(request, category=None):
+def post_list(request, category=None, tag_slug=None):
     # nous utilisons ici le manager published que nous avons crée nous même 
     # qui permet de recuperer que les publications qui ont été publié
     posts = Post.published.all().order_by('-publish')
     # recupère la liste des categories
     categories = Category.objects.all()
+    tag = None
     # si la category recupere en paramètre existe alors
     if category:
-        # recupère moi tout la categorie dont le slug correspond au nom de la categorie
+        # recupère moi la categorie dont le slug correspond au nom de la categorie
         # passer en paramètre dans le cas contraire elève une exception d'ou la présence 
         # du get_object_or_404
         category = get_object_or_404(Category, slug=category)
         # ensuite recupère moi tout les publications liés à cette categorie
         posts = posts.filter(category=category)
+    # si tag_slug existe et n'est pas vide alors
+    if tag_slug:
+        # recupère moi le tag dont le slug correspond au nom du tag passer en paramètre
+        # dans le cas contraire elève une exception d'ou la présence du get_object_or_404
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        # une fois le tag trouvé, on filtre les publications pour inclure uniquement
+        # celles qui ont le tag récupéré dans l'étape précédente
+        posts = posts.filter(tags__in=[tag])
     # instancier la classe paginator qui prend en paramètre la liste des publication
     # et le nbre d'élément par page
     paginator = Paginator(posts, 2)
@@ -51,7 +62,8 @@ def post_list(request, category=None):
         # la nouvelle liste de publication sera egale à la liste des publication 
         # de la dernière page (num_pages)
         posts = paginator.page(paginator.num_pages) 
-    context = {'posts': posts, 'page': page, 'categories': categories, 'category': category}
+    context = {'posts': posts, 'page': page, 'categories': categories,
+               'category': category, 'tag': tag}
     return render(request, 'blog/post/postList.html', context)
 
 # Fonction qui permet d'afficher le détail d'une publication
@@ -156,6 +168,10 @@ def post_add(request):
             post.author = request.user
             # et finalement enregistrer le ds la DB
             post.save()
+            # permet d'enregistrer les modifications des champs many-to-many
+            # après avoir enregistré l'instance principale du modèle lorsque
+            # vous utilisez commit=False.
+            form_post.save_m2m()
             # puis redirige utilisateur vers la liste des publications
             return redirect('post_list')
     # sinon renvoie la vue avec le formulaire vide

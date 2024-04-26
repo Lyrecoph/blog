@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 from ckeditor.fields import RichTextField
+from taggit.managers import TaggableManager
 # Create your models here.
 
 # il est préferable d'uitlisateur la table user par défaut de django si dans 
@@ -73,6 +74,10 @@ class Post(models.Model):
     objects = models.Manager() # manager par defaut
     # manager nous permettant de recuperer uniquement les posts publiés
     published = PublishedManager() 
+    # est un champ que l'on peut utiliser dans un modèle Django pour gérer des tags
+    # associés à une instance de ce modèle. Cela permet de catégoriser et de retrouver 
+    # facilement des instances en fonction de leurs tags
+    tags = TaggableManager()
     
     # cette méthode permet de representer l'objet en chaine de caractère au niveau de DB
     def __str__(self) -> str:
