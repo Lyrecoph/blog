@@ -4,6 +4,7 @@ import time
 from django.shortcuts import render,redirect, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponseRedirect, StreamingHttpResponse
+from django.db.models import Count
 
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.mail import send_mail
@@ -97,9 +98,22 @@ def detail_list(request, year:int, month:int, day: int, slug:str):
     else:
         # on renvoie un formulaire vide
         comment_form = CommentForm()
+    # recuperer l'id des tags d'une publication
+    post_tags_ids = post.tags.values_list('id', flat=True)
+    # recupère tout les publication qui ont été taggé avec les tags
+    # (les publications publiées (Post.published) qui ont au moins un tag 
+    # en commun avec la publication post) et exclut la publication sur laquelle 
+    # l'on est branché
+    similar_post = Post.published.filter(tags__in=post_tags_ids).exclude(id=post.id)
+    # ajoute une annotation same_tags à chaque publication dans simalar_post, 
+    # qui représente le nombre de tags en commun avec la publication post. 
+    # Ensuite, il trie les résultats par nombre de tags en commun (decroissant) 
+    # et par date de publication (décroissant), puis récupère les 4 premières publications
+    # les plus similaires.
+    similar_post = similar_post.annotate(same_tags=Count('tags')).order_by('-same_tags', '-publish')[:2]
     return render(request, 'blog/post/postDetail.html', {
         'post':post, 'new_comment': new_comment, 
-        'comment_form':comment_form, 'comments': comments})
+        'comment_form':comment_form, 'comments': comments, 'similar_post':similar_post})
     
 # Cette fonction permet de rechercher des publications, à noté que lorsque 
 # l'utilisateur fera une recherche il sera rediriger vers une page de recherche
