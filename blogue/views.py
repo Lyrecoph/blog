@@ -3,7 +3,7 @@ import time
 
 from django.shortcuts import render,redirect, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.http import HttpResponseRedirect, StreamingHttpResponse
+from django.http import HttpResponseRedirect, StreamingHttpResponse, JsonResponse
 from django.db.models import Count
 
 from django.core.serializers.json import DjangoJSONEncoder
@@ -13,6 +13,7 @@ from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
+from django.views.decorators.http import require_POST
 # Les librairies tierces
 from taggit.models import Tag
 
@@ -66,11 +67,11 @@ def post_list(request, category=None, tag_slug=None):
         # de la dernière page (num_pages)
         posts = paginator.page(paginator.num_pages) 
     context = {'posts': posts, 'page': page, 'categories': categories,
-               'category': category, 'tag': tag}
+               'category': category, 'tag': tag, 'session': 'home'}
     return render(request, 'blog/post/postList.html', context)
 
 # Fonction qui permet d'afficher le détail d'une publication
-def detail_list(request, year:int, month:int, day: int, slug:str):
+def post_detail(request, year:int, month:int, day: int, slug:str):
     # permet de recuperer les publications publié et dont le slug 
     # correspond au slug, année, mois, jour passer en paramètre 
     # [(publish__year):permet de filtrer les objets Post 
@@ -116,6 +117,26 @@ def detail_list(request, year:int, month:int, day: int, slug:str):
     return render(request, 'blog/post/postDetail.html', {
         'post':post, 'new_comment': new_comment, 
         'comment_form':comment_form, 'comments': comments, 'similar_post':similar_post})
+    
+    
+# Cette fonction gère le système de commentaire avec Ajax
+@require_POST
+def ajax_comment(request):
+    # récupère l'id du poste actuel
+    post_id = request.POST.get('id')
+    comment = request.POST.get('comment')
+    if post_id and comment:
+        try:
+            # récupère le poste actuel
+            post = Post.objects.get(id=post_id)
+            Comment.objects.get_or_create(post=post, author=request.user, body=comment)
+            return JsonResponse({'status': 'success'})
+        except Post.DoesNotExist:
+            pass
+    # si le poste n'existe pas alors on retourne une erreur
+    return JsonResponse({'status': 'error'})
+        
+    
     
 # Cette fonction permet de rechercher des publications, à noté que lorsque 
 # l'utilisateur fera une recherche il sera rediriger vers une page de recherche

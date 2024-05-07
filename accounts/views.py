@@ -28,11 +28,11 @@ def login_view(request):
                 return redirect('post_list')
             else:
                 # si l'utilisateur n'existe pas dans la DB alors retourne la page de connexion
-                return render(request, 'registration/login.html')
+                return render(request, 'registration/login.html', {'session': 'login'})
             
         else:
             # sinon affiche le formulaire de connexion
-            return render(request, 'registration/login.html')  
+            return render(request, 'registration/login.html', {'session': 'login'})  
     else:
         return redirect('post_list')
  
@@ -62,11 +62,13 @@ def register_view(request):
         # dans le cas ou le formulaire n'est valide alors
         else:
             # retourne moi encore la page d'incription
-            return render(request, 'registration/register.html', {'user_form': user_form})
+            return render(request, 'registration/register.html', 
+                          {'user_form': user_form, 'session':'signup'})
     # sinon retourne la page d'inscription avec un formulaire vide
     else: 
         user_form = RegisterForm()
-        return render(request, 'registration/register.html', {'user_form': user_form})
+        return render(request, 'registration/register.html', 
+                      {'user_form': user_form, 'session':'signup'})
 
 # @login_required indique que cette vue n'est accessible qu'après avoir été connecté
 @login_required
@@ -74,7 +76,8 @@ def register_view(request):
 def dashboard(request):
     # recupère moi le profile de l'utilisateur connecté
     user_profile = Profile.objects.filter(user=request.user).first()
-    return render(request, 'profile/dashboard.html',{'user_profile': user_profile})
+    return render(request, 'profile/dashboard.html',
+                  {'user_profile': user_profile, 'session': 'dashboard'})
 
 
 # Cette fonction gère l'édition du profil d'un utilisateur. Elle utilise deux formulaires,

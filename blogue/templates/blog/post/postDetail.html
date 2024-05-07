@@ -58,7 +58,14 @@
                                 <form action="" method="post" class="mb-5">
                                     {% csrf_token %}
                                     {{comment_form.as_p}}
-                                    <button class="btn btn-primary mb-2" type="submit">Add comment</button>
+                                    <button 
+                                        class="btn btn-primary mb-2" 
+                                        type="button"
+                                        id="post-id"
+                                        data-id="{{post.id}}"
+                                    >
+                                        Add comment
+                                    </button>
                                 </form>
                                 
                             {% endif %}
@@ -97,33 +104,6 @@
                             <button class="btn btn-primary" id="button-search" type="button">Go!</button>
                         </div>
                     </div>
-                </div>
-                <!-- Categories widget-->
-                <div class="card mb-4">
-                    <div class="card-header">Categories</div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <ul class="list-unstyled mb-0">
-                                    <li><a href="#!">Web Design</a></li>
-                                    <li><a href="#!">HTML</a></li>
-                                    <li><a href="#!">Freebies</a></li>
-                                </ul>
-                            </div>
-                            <div class="col-sm-6">
-                                <ul class="list-unstyled mb-0">
-                                    <li><a href="#!">JavaScript</a></li>
-                                    <li><a href="#!">CSS</a></li>
-                                    <li><a href="#!">Tutorials</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Side widget-->
-                <div class="card mb-4">
-                    <div class="card-header">Side Widget</div>
-                    <div class="card-body">You can put anything you want inside of these side widgets. They are easy to use, and feature the Bootstrap 5 card component!</div>
                 </div>
                 <!-- Liste des posts similaires -->
                 <div class="card mb-4">
@@ -231,6 +211,50 @@
             let new_data = new Date(data);
             return new_data.toUTCString().replace('GMT', '')
         }
+
+        /* système de commentaire avec ajax */
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        function ajax_comment(){
+            const url = '{% url "ajax_comment" %}';
+            let options = {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                mode: 'same-origin'
+            };
+            let sendBtn = document.querySelector("#post-id");
+            sendBtn.addEventListener('click', function(e){
+                e.preventDefault();
+                let formData = new FormData();
+                let commentContent = this.parentNode.querySelector('#id_body').value;
+                formData.append("id", sendBtn.dataset.id)
+                formData.append("comment", commentContent)
+                options['body'] = formData;
+                this.parentNode.querySelector('#id_body').value="";
+                fetch(url, options)
+                    .then(resp => resp.json())
+                        .then(data => {
+                        })
+            })
+        }
+        ajax_comment()
     </script>
 {% endblock domReady %}
 
