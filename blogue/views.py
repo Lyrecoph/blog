@@ -10,7 +10,9 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.core.mail import send_mail
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank,\
     TrigramSimilarity
-
+from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
+from django.views.generic.base import TemplateView
+from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 # Les librairies tierces
 from taggit.models import Tag
 
@@ -165,9 +167,16 @@ def post_search(request):
     return render(request, 'blog/post/search.html', 
                   {'search_form': search_form, 'query': query, 'results': results})
 
+# Cette fonction retourne true si l'utilisateur connecté est un auteur
+# (appartient à un groupe Author)
+def is_author(user):
+    return user.groups.filter(name='Author').exists()
+
 # Cette fonction permet d'ajouter un nouvel article de blog en utilisant un formulaire
 # Elle s'assure que l'article est associé à l'utilisateur connecté et le redirige vers
 # la liste des articles après l'ajout.
+# @permission_required('blogue.add_post', raise_exception=True)
+@user_passes_test(is_author)
 def post_add(request):
     # si un formulaire a été soumis
     if request.method == 'POST':
@@ -192,6 +201,34 @@ def post_add(request):
     else:
         form_post = PostForm()
     return render(request, 'blog/post/postAdd.html', {'form_post': form_post})
+
+# Vue basé sur une classe (vue générique)
+# class AddPost(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+#     template_name = 'blog/post/postAdd.html'
+    
+#     def get(self, request):
+#         form_post = PostForm()
+#         return self.render_to_response({'form_post': form_post})
+    
+#     def post(self, request):
+#          # crée une instance de PostForm avec les données de la requête (request.POST)
+#         # et les fichiers envoyés (request.FILES).
+#         form_post = PostForm(request.POST or None, request.FILES or None)
+#         # vérifie si le formulaire est valide 
+#         if form_post.is_valid():
+#             # sauvegarde l'objet Post sans enregistrer les données ds la BD
+#             post = form_post.save(commit=False)
+#             # relie le post à l'utilisateur connecté
+#             post.author = request.user
+#             # et finalement enregistrer le ds la DB
+#             post.save()
+#             # permet d'enregistrer les modifications des champs many-to-many
+#             # après avoir enregistré l'instance principale du modèle lorsque
+#             # vous utilisez commit=False.
+#             form_post.save_m2m()
+#             # puis redirige utilisateur vers la liste des publications
+#             return redirect('post_list')
+#         return self.render_to_response({'form_post': form_post})
 
 
 # Les événements SSE (Server-Sent Events) sont une technologie web qui permet au serveur

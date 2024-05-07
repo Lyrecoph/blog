@@ -134,6 +134,12 @@ STATIC_URL = 'static/'
 # configuration de debug toolbar etape 3
 STATICFILES_DIRS= [os.path.join(BASE_DIR, 'static')]
 
+# configuration des fichiers 
+MEDIA_URL = 'media/'
+
+# emplacement de stockage des fichiers
+MEDIA_ROOT = BASE_DIR / 'media'
+
 STATIC_ROOT = os.path.join(BASE_DIR,'static/static')
 
 # Default primary key field type

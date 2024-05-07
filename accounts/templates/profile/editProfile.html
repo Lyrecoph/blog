@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Modification des informations de "{{request.user}}"</h2>
+  <br>
+  <form action="." method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{user_edit_form.as_p}}
+    {{profile_edit_form.as_p}}
+    <button class="btn btn-primary  mx-2 mb-2" type="submit">Enregistrer</button>
+  </form>
+{% endblock content %}

@@ -9,6 +9,9 @@ urlpatterns = [
     path("<int:year>/<int:month>/<int:day>/<slug>/update/", 
          views.post_update, name="post_update"),
     path("add/", views.post_add, name="post_add"),
+    # vue generic
+    # path("add/", views.AddPost.as_view(), name="post_add"),
+    
     path('<int:post_id>/stream/', views.stream_comment_view, name='stream_comment'),
     path('<int:post_id>/post_email/', views.email_post, name='post_email'),
     path("search/", views.post_search, name="post_search"),

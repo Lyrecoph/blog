@@ -1,5 +1,7 @@
+from typing import Any
 from django import forms
 from django.contrib.auth.models import User
+from accounts.models import Profile
 
 # Cette classe nous permet d'heriter des champs de la table User
 class RegisterForm(forms.ModelForm):
@@ -38,8 +40,41 @@ class RegisterForm(forms.ModelForm):
         model = User
         fields = ['username', 'first_name', 'last_name', 'email']
         
+    # cette méthode assure que les champs password et confirm_password d'un formulaire
+    # d'inscription correspondent, ce qui garantit que l'utilisateur saisit 
+    # correctement son mot de passe.
+    def clean_confirm_password(self):
+        # c' est un dictionnaire contenant les valeurs nettoyées de tous les champs
+        # du formulaire.
+        cd = self.cleaned_data
+        if cd['password'] != cd['confirm_password']:
+            raise forms.ValidationError('les deux mots de passe ne sont pas identique')
+        # Si les mots de passe correspondent, cette méthode renvoie la valeur du champ 
+        # confirm_password, ce qui signifie que la validation a réussi et que 
+        # le formulaire est prêt à être soumis.
+        return cd['confirm_password']
+        
+        
     # class class Meta:
     #     db_table = ''
     #     managed = True
     #     verbose_name = 'ModelName'
     #     verbose_name_plural = 'ModelNames'
+    
+    
+# Génere un formulaire à partir des champs de la table USER en tenant 
+# compte de champs à afficher spécifié au niveau de la variable fields
+class UserEditForm(forms.ModelForm):
+    
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+        
+# Génere un formulaire à partir des champs de la table PROFILE en tenant 
+# compte de champs à afficher spécifié au niveau de la variable fields
+class ProfileEditForm(forms.ModelForm):
+    
+    class Meta:
+        model = Profile
+        fields = '__all__'
+        exclude = ['user']
