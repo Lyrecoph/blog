@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 
 from accounts.forms import RegisterForm, UserEditForm, ProfileEditForm
 from accounts.models import Profile
@@ -18,6 +19,14 @@ def login_view(request):
             # récupérer les valeurs des champs du formulaire
             username = request.POST['username']
             password = request.POST['password']
+            
+            if not username or not password:
+                if not username:
+                    messages.error(request, 'Nom d\'utilisateur est requit.')
+                if not password:
+                    messages.error(request, 'Mot de passe est requit.')
+                return render(request, 'registration/login.html', {'session': 'login'})
+            
             # verifie si le nom d'utilisateur et le mot de passe sont corrects et existe ds le DB
             user = authenticate(request, username=username, password=password)
             # si l'utilisateur est valide
@@ -27,6 +36,8 @@ def login_view(request):
                 # redirige l'utilisateur vers la page des publications
                 return redirect('post_list')
             else:
+                # si l'utilisateur n'existe pas dans la DB alors retourne la page de connexion avec un message d'erreur
+                messages.error(request, 'nom d\'utilisateur ou nom de passe incorrecte.')
                 # si l'utilisateur n'existe pas dans la DB alors retourne la page de connexion
                 return render(request, 'registration/login.html', {'session': 'login'})
             

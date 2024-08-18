@@ -41,11 +41,17 @@
             s'il n'a rien trouvé comme resultat-->
             <p><a href="{% url 'post_search' %}">Search again</a></p>
         {% else %}
-            <h3>Search for posts</h3>
-            <form method="get">
-                {{search_form.as_p}}
-                <input class="btn btn-primary mb-2" type="submit" value="Search">
-            </form>
+        <div class="col-lg-8 ml-auto">
+            <div class="card mb-4 mt-2">
+                <div class="card-header">Search for posts</div>
+                <div class="card-body">
+                    <form method="get">
+                        {{search_form.as_p}}
+                        <input class="btn btn-primary mb-2" type="submit" value="Search">
+                    </form>
+                </div>
+            </div>
+        </div>
         {% endif %}
     </div>
 {% endblock %}

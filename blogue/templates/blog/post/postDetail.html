@@ -15,7 +15,10 @@
                             {% if user.perm.blogue.delete or user == post.author %}
                                 <div class="row col-4">
                                     <a class="btn btn-secondary col-5 mx-1" href="{{post.get_absolute_url}}update/">Update</a>
-                                    <a class="btn btn-danger col-5" href="">Delete</a>
+                                    <form action="{% url 'post_delete' post.publish.year post.publish.month post.publish.day post.slug %}" method="post">
+                                        {% csrf_token %}
+                                        <button class="btn btn-danger col-5" type="submit">Delete</button>
+                                    </form>
                                 </div>
                             {% endif %}
                         </div>

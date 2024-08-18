@@ -1,52 +1,67 @@
 {% extends 'base.html' %}
 {% block content %}
-    <div class="container px-5 my-5">
-    <form id="contactForm" data-sb-form-api-token="API_TOKEN" action="." method="post">
+<style>
+    .hide {
+        display: none;
+    }
+</style>
+<div class="container px-5 my-5">
+    <form id="contactForm" data-sb-form-api-token="API_TOKEN" action="." method="post" >
         {% csrf_token %}
         <div class="form-floating mb-3">
-<!--            <input class="form-control" id="username" type="text" placeholder="Username" data-sb-validations="required" />-->
             {{user_form.username}}
-
             <label for="{{user_form.username.id_for_label}}">Username</label>
-            <div class="invalid-feedback" data-sb-feedback="username:required">Username is required.</div>
+            {% if user_form.errors.username %}
+                {% for error in user_form.errors.username %}
+                    <div class="text-danger error-message">{{ error }}</div>
+                {% endfor %}
+            {% endif %}
         </div>
         <div class="form-floating mb-3">
-<!--            <input class="form-control" id="firstName" type="text" placeholder="First Name" data-sb-validations="required" />-->
             {{user_form.first_name}}
-
             <label for="{{user_form.first_name.id_for_label}}">First Name</label>
-            <div class="invalid-feedback" data-sb-feedback="firstName:required">First Name is required.</div>
+            {% if user_form.errors.first_name %}
+                {% for error in user_form.errors.first_name %}
+                    <div class="text-danger error-message">{{ error }}</div>
+                {% endfor %}
+            {% endif %}
         </div>
         <div class="form-floating mb-3">
-<!--            <input class="form-control" id="lastName" type="text" placeholder="Last Name" data-sb-validations="required" />-->
             {{user_form.last_name}}
-
             <label for="{{user_form.last_name.id_for_label}}">Last Name</label>
-            <div class="invalid-feedback" data-sb-feedback="lastName:required">Last Name is required.</div>
+            {% if user_form.errors.last_name %}
+                {% for error in user_form.errors.last_name %}
+                    <div class="text-danger error-message">{{ error }}</div>
+                {% endfor %}
+            {% endif %}
         </div>
         <div class="form-floating mb-3">
-<!--            <input class="form-control" id="emailAddress" type="email" placeholder="Email Address" data-sb-validations="required,email" />-->
             {{user_form.email}}
-
             <label for="{{user_form.email.id_for_label}}">Email Address</label>
-            <div class="invalid-feedback" data-sb-feedback="emailAddress:required">Email Address is required.</div>
-            <div class="invalid-feedback" data-sb-feedback="emailAddress:email">Email Address Email is not valid.</div>
+            {% if user_form.errors.email %}
+                {% for error in user_form.errors.email %}
+                    <div class="text-danger error-message">{{ error }}</div>
+                {% endfor %}
+            {% endif %}
         </div>
         <div class="form-floating mb-3">
-<!--            <input class="form-control" id="password" type="text" placeholder="Password" data-sb-validations="required" />-->
             {{user_form.password}}
-
             <label for="{{user_form.password.id_for_label}}">Password</label>
-            <div class="invalid-feedback" data-sb-feedback="password:required">Password is required.</div>
+            {% if user_form.errors.password %}
+                {% for error in user_form.errors.password %}
+                    <div class="text-danger error-message">{{ error }}</div>
+                {% endfor %}
+            {% endif %}
         </div>
         <div class="form-floating mb-3">
-<!--            <input class="form-control" id="confirmPassword" type="text" placeholder="Confirm Password" data-sb-validations="required" />-->
             {{user_form.confirm_password }}
-            
             <label for={{user_form.confirm_password.id_for_label}}>Confirm Password</label>
-            <div class="invalid-feedback" data-sb-feedback="confirmPassword:required">Confirm Password is required.</div>
+            {% if user_form.errors.confirm_password %}
+                {% for error in user_form.errors.confirm_password %}
+                    <div class="text-danger error-message">{{ error }}</div>
+                {% endfor %}
+            {% endif %}
         </div>
-
         <div class="d-none" id="submitErrorMessage">
             <div class="text-center text-danger mb-3">Error sending message!</div>
         </div>
@@ -55,4 +70,16 @@
         </div>
     </form>
 </div>
+<script>
+    // Get all error message elements
+    const errorMessages = document.querySelectorAll('.error-message');
+
+    // Hide error messages after 3 seconds
+    errorMessages.forEach(message => {
+        setTimeout(() => {
+            message.classList.add('hide');
+        }, 3000);
+    });
+</script>
+
 {% endblock %}

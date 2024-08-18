@@ -13,12 +13,15 @@ from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
+from django.contrib import messages
 from django.views.decorators.http import require_POST
+
 # Les librairies tierces
 from taggit.models import Tag
 
 from blogue.models import Post, Comment, Category
 from blogue.forms import CommentForm, PostSearchForm, PostForm, EmailPostForm
+
 # Create your views here.
 # Pour définir une vue nous avons deux méthodes : vue fondé sur les classes et
 # vue fondé sur les méthodes
@@ -117,7 +120,144 @@ def post_detail(request, year:int, month:int, day: int, slug:str):
     return render(request, 'blog/post/postDetail.html', {
         'post':post, 'new_comment': new_comment, 
         'comment_form':comment_form, 'comments': comments, 'similar_post':similar_post})
+
+
+# Vue basé sur une classe (vue générique)
+# class AddPost(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+#     template_name = 'blog/post/postAdd.html'
     
+#     def get(self, request):
+#         form_post = PostForm()
+#         return self.render_to_response({'form_post': form_post})
+    
+#     def post(self, request):
+#          # crée une instance de PostForm avec les données de la requête (request.POST)
+#         # et les fichiers envoyés (request.FILES).
+#         form_post = PostForm(request.POST or None, request.FILES or None)
+#         # vérifie si le formulaire est valide 
+#         if form_post.is_valid():
+#             # sauvegarde l'objet Post sans enregistrer les données ds la BD
+#             post = form_post.save(commit=False)
+#             # relie le post à l'utilisateur connecté
+#             post.author = request.user
+#             # et finalement enregistrer le ds la DB
+#             post.save()
+#             # permet d'enregistrer les modifications des champs many-to-many
+#             # après avoir enregistré l'instance principale du modèle lorsque
+#             # vous utilisez commit=False.
+#             form_post.save_m2m()
+#             # puis redirige utilisateur vers la liste des publications
+#             return redirect('post_list')
+#         return self.render_to_response({'form_post': form_post})
+
+
+# Cette fonction retourne true si l'utilisateur connecté est un auteur
+# (appartient à un groupe Author)
+def is_author(user):
+    return user.groups.filter(name='Author').exists()
+
+
+# Cette fonction permet d'ajouter un nouvel article de blog en utilisant un formulaire
+# Elle s'assure que l'article est associé à l'utilisateur connecté et le redirige vers
+# la liste des articles après l'ajout.
+# @permission_required('blogue.add_post', raise_exception=True)
+@user_passes_test(is_author)
+def post_add(request):
+    # si un formulaire a été soumis
+    if request.method == 'POST':
+        # crée une instance de PostForm avec les données de la requête (request.POST)
+        # et les fichiers envoyés (request.FILES).
+        form_post = PostForm(request.POST or None, request.FILES or None)
+        # vérifie si le formulaire est valide 
+        if form_post.is_valid():
+            # sauvegarde l'objet Post sans enregistrer les données ds la BD
+            post = form_post.save(commit=False)
+            # relie le post à l'utilisateur connecté
+            post.author = request.user
+            # et finalement enregistrer le ds la DB
+            post.save()
+            # permet d'enregistrer les modifications des champs many-to-many
+            # après avoir enregistré l'instance principale du modèle lorsque
+            # vous utilisez commit=False.
+            form_post.save_m2m()
+            # puis redirige utilisateur vers la liste des publications
+            return redirect('post_list')
+    # sinon renvoie la vue avec le formulaire vide
+    else:
+        form_post = PostForm()
+    return render(request, 'blog/post/postAdd.html', 
+                  {'form_post': form_post, 'session': 'addpost'})
+    
+    
+# Cette fonction permet à un utilisateur de modifier un article de blog existant 
+# en utilisant un formulaire Django. Une fois les modifications enregistrées, 
+# l'utilisateur est redirigé vers la page de détail de l'article.
+def post_update(request, year:int, month:int, day: int, slug:str):
+    post = get_object_or_404(Post, slug=slug, status='published', 
+                             publish__year=year, publish__month=month, publish__day=day)
+    # Initialisation d'un dictionnaire context pour stocker les données à passer au template.
+    context = {}
+    # si le formulaire a été soumis pour mettre à jour l'article
+    if request.method == 'POST':
+        # alors un formulaire (PostForm) est créé avec les données 
+        # de la requête et l'instance de l'article à mettre à jour
+        form_post = PostForm(request.POST, request.FILES, instance=post)
+        # si le formulaire est valide, les modifications sont enregistrées
+        # dans la base de données à l'aide de form_post.save()
+        if form_post.is_valid():
+            form_post.save()
+            # return HttpResponseRedirect(f'/{post.get_absolute_url()}')
+            # Redirection de l'utilisateur vers la page de détail 
+            # de l'article mis à jour après la sauvegarde.
+            return HttpResponseRedirect(f'/{year}/{month}/{day}/{slug}/')
+    # sinon renvoie moi le formulaire avec les données actuelles de l'article 
+    # dans le formulaire
+    else:
+        form_post = PostForm(instance=post)
+    context['form_post'] = form_post
+    context['post'] = post
+    return render(request, 'blog/post/postAdd.html', context)
+    
+
+# Cette fonction permet de supprimer une publication
+def post_delete(request, year:int, month:int, day:int, slug:str):
+    # Récupérer la publication à supprimer
+    post = get_object_or_404(Post, slug=slug, status='published', 
+                             publish__year=year, publish__month=month, publish__day=day)
+
+    # Vérifier si l'utilisateur a la permission de supprimer la publication
+    if request.user.has_perm('blogue.delete_post') or request.user == post.author:
+        # Vérifier si la requête est de type POST (pour éviter la suppression par simple accès à l'URL)
+        if request.method == 'POST':
+            # Supprimer la publication
+            post.delete()
+            messages.success(request, 'Publication supprimée avec succès.')
+            return redirect('post_list')
+        else:
+            # Afficher un message d'erreur si la méthode de la requête n'est pas POST
+            messages.error(request, 'Méthode non autorisée pour la suppression de la publication.')
+            return HttpResponseRedirect(f'/{year}/{month}/{day}/{slug}/')
+    else:
+        # Afficher un message d'erreur si l'utilisateur n'a pas la permission de supprimer la publication
+        messages.error(request, 'Vous n\'avez pas la permission de supprimer cette publication.')
+        return HttpResponseRedirect(f'/{year}/{month}/{day}/{slug}/')
+    
+    # Message de débogage
+    print("La vue post_delete a été atteinte. La publication n'a pas été supprimée.")
+
+
+# Cette fonction gère la suppression d'une publication en utilisant Ajax
+def post_delete_ajax(request, year, month, day, slug):
+    post = get_object_or_404(Post, slug=slug, status='published', 
+                             publish__year=year, publish__month=month, publish__day=day)
+    if request.user.has_perm('blogue.delete_post') or request.user == post.author:
+        if request.method == 'POST' and request.is_ajax():
+            post.delete()
+            return JsonResponse({'message': 'Publication supprimée avec succès.'})
+        else:
+            return JsonResponse({'message': 'Méthode non autorisée pour la suppression de la publication.'}, status=400)
+    else:
+        return JsonResponse({'message': 'Vous n\'avez pas la permission de supprimer cette publication.'}, status=403)
     
 # Cette fonction gère le système de commentaire avec Ajax
 @require_POST
@@ -136,8 +276,7 @@ def ajax_comment(request):
     # si le poste n'existe pas alors on retourne une erreur
     return JsonResponse({'status': 'error'})
         
-    
-    
+      
 # Cette fonction permet de rechercher des publications, à noté que lorsque 
 # l'utilisateur fera une recherche il sera rediriger vers une page de recherche
 def post_search(request):
@@ -176,7 +315,8 @@ def post_search(request):
             # de recherche). Enfin, elle trie les résultats par ordre de pertinence (rank),
             # en utilisant SearchRank pour calculer la pertinence de chaque résultat 
             # par rapport au terme de recherche.
-            results = Post.published.annotate(search=vector_search, rank=SearchRank(vector_search, query_search)
+            results = Post.published.annotate(search=vector_search, 
+                                              rank=SearchRank(vector_search, query_search)
                                               ).filter(search=query_search).order_by('-rank')
             
             # retourne les publications qui contient ou à une similarité de 10% avec le terme de recherche
@@ -188,70 +328,8 @@ def post_search(request):
     return render(request, 'blog/post/search.html', 
                   {'search_form': search_form, 'query': query, 'results': results})
 
-# Cette fonction retourne true si l'utilisateur connecté est un auteur
-# (appartient à un groupe Author)
-def is_author(user):
-    return user.groups.filter(name='Author').exists()
 
-# Cette fonction permet d'ajouter un nouvel article de blog en utilisant un formulaire
-# Elle s'assure que l'article est associé à l'utilisateur connecté et le redirige vers
-# la liste des articles après l'ajout.
-# @permission_required('blogue.add_post', raise_exception=True)
-@user_passes_test(is_author)
-def post_add(request):
-    # si un formulaire a été soumis
-    if request.method == 'POST':
-        # crée une instance de PostForm avec les données de la requête (request.POST)
-        # et les fichiers envoyés (request.FILES).
-        form_post = PostForm(request.POST or None, request.FILES or None)
-        # vérifie si le formulaire est valide 
-        if form_post.is_valid():
-            # sauvegarde l'objet Post sans enregistrer les données ds la BD
-            post = form_post.save(commit=False)
-            # relie le post à l'utilisateur connecté
-            post.author = request.user
-            # et finalement enregistrer le ds la DB
-            post.save()
-            # permet d'enregistrer les modifications des champs many-to-many
-            # après avoir enregistré l'instance principale du modèle lorsque
-            # vous utilisez commit=False.
-            form_post.save_m2m()
-            # puis redirige utilisateur vers la liste des publications
-            return redirect('post_list')
-    # sinon renvoie la vue avec le formulaire vide
-    else:
-        form_post = PostForm()
-    return render(request, 'blog/post/postAdd.html', {'form_post': form_post})
-
-# Vue basé sur une classe (vue générique)
-# class AddPost(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
-#     template_name = 'blog/post/postAdd.html'
     
-#     def get(self, request):
-#         form_post = PostForm()
-#         return self.render_to_response({'form_post': form_post})
-    
-#     def post(self, request):
-#          # crée une instance de PostForm avec les données de la requête (request.POST)
-#         # et les fichiers envoyés (request.FILES).
-#         form_post = PostForm(request.POST or None, request.FILES or None)
-#         # vérifie si le formulaire est valide 
-#         if form_post.is_valid():
-#             # sauvegarde l'objet Post sans enregistrer les données ds la BD
-#             post = form_post.save(commit=False)
-#             # relie le post à l'utilisateur connecté
-#             post.author = request.user
-#             # et finalement enregistrer le ds la DB
-#             post.save()
-#             # permet d'enregistrer les modifications des champs many-to-many
-#             # après avoir enregistré l'instance principale du modèle lorsque
-#             # vous utilisez commit=False.
-#             form_post.save_m2m()
-#             # puis redirige utilisateur vers la liste des publications
-#             return redirect('post_list')
-#         return self.render_to_response({'form_post': form_post})
-
-
 # Les événements SSE (Server-Sent Events) sont une technologie web qui permet au serveur
 # d'envoyer des mises à jour au client de manière unidirectionnelle, c'est-à-dire du 
 # serveur vers le client. Voici comment fonctionnent les événements SSE et quelques 
@@ -293,34 +371,7 @@ def post_add(request):
 # une alternative légère et efficace aux technologies plus lourdes comme les WebSockets.
 
 
-# Cette fonction permet à un utilisateur de modifier un article de blog existant 
-# en utilisant un formulaire Django. Une fois les modifications enregistrées, 
-# l'utilisateur est redirigé vers la page de détail de l'article.
-def post_update(request, year:int, month:int, day: int, slug:str):
-    post = get_object_or_404(Post, slug=slug, status='published', 
-                             publish__year=year, publish__month=month, publish__day=day)
-    # Initialisation d'un dictionnaire context pour stocker les données à passer au template.
-    context = {}
-    # si le formulaire a été soumis pour mettre à jour l'article
-    if request.method == 'POST':
-        # alors un formulaire (PostForm) est créé avec les données 
-        # de la requête et l'instance de l'article à mettre à jour
-        form_post = PostForm(request.POST, request.FILES, instance=post)
-        # si le formulaire est valide, les modifications sont enregistrées
-        # dans la base de données à l'aide de form_post.save()
-        if form_post.is_valid():
-            form_post.save()
-            # return HttpResponseRedirect(f'/{post.get_absolute_url()}')
-            # Redirection de l'utilisateur vers la page de détail 
-            # de l'article mis à jour après la sauvegarde.
-            return HttpResponseRedirect(f'/{year}/{month}/{day}/{slug}/')
-    # sinon renvoie moi le formulaire avec les données actuelles de l'article 
-    # dans le formulaire
-    else:
-        form_post = PostForm(instance=post)
-    context['form_post'] = form_post
-    context['post'] = post
-    return render(request, 'blog/post/postAdd.html', context)
+
 
 
 # Cette fonction permet à un client (comme un navigateur web) de se connecter à cette vue 

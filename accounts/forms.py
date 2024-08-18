@@ -44,16 +44,17 @@ class RegisterForm(forms.ModelForm):
     # d'inscription correspondent, ce qui garantit que l'utilisateur saisit 
     # correctement son mot de passe.
     def clean_confirm_password(self):
+        cleaned_data = super().clean()
         # c' est un dictionnaire contenant les valeurs nettoyées de tous les champs
         # du formulaire.
-        cd = self.cleaned_data
-        if cd['password'] != cd['confirm_password']:
-            raise forms.ValidationError('les deux mots de passe ne sont pas identique')
+        password = cleaned_data.get('password')
+        confirm_password = cleaned_data.get('confirm_password')
+        if password and confirm_password and password != confirm_password:
+            raise forms.ValidationError('les deux mots de passe ne sont pas identique.')
         # Si les mots de passe correspondent, cette méthode renvoie la valeur du champ 
         # confirm_password, ce qui signifie que la validation a réussi et que 
         # le formulaire est prêt à être soumis.
-        return cd['confirm_password']
-        
+        return confirm_password
         
     # class class Meta:
     #     db_table = ''

@@ -8,6 +8,8 @@ urlpatterns = [
     path("<int:year>/<int:month>/<int:day>/<slug>/", views.post_detail, name="post_detail"),
     path("<int:year>/<int:month>/<int:day>/<slug>/update/", 
          views.post_update, name="post_update"),
+    path("<int:year>/<int:month>/<int:day>/<slug>/", views.post_delete, name="post_delete"),
+    path('<int:year>/<int:month>/<int:day>/<str:slug>/delete/', views.post_delete_ajax, name='post_delete_ajax'),
     path("add_post/", views.post_add, name="post_add"),
     # vue generic
     # path("add/", views.AddPost.as_view(), name="post_add"),

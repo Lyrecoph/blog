@@ -4,6 +4,13 @@
     <div class="container px-5 my-5">
         <form id="contactForm" data-sb-form-api-token="API_TOKEN" method="post">
             {% csrf_token %}
+            {% if messages %}
+                <div class="alert alert-danger" role="alert" id="error-message">
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                </div>
+            {% endif %}
             <div class="form-floating mb-3">
                 <input class="form-control" id="username" type="text" name="username" placeholder="Enter your username" data-sb-validations="required,username" />
                 <label for="username">Username</label>
@@ -22,4 +29,10 @@
         </form>
     </div>
     <script src="https://cdn.startbootstrap.com/sb-forms-latest.js"></script>
+    <script>
+        // Masquer le message d'erreur après 3 secondes
+        setTimeout(function() {
+            document.getElementById('error-message').style.display = 'none';
+        }, 3000);
+    </script>
 {% endblock %}

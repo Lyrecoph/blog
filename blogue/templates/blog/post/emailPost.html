@@ -1,15 +1,27 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block content %}
-    {% if sent %}
-        <h1>E-mail a été envoyé</h1>
-        <p>"{{post.title}}" a été envoyé à {{form_post.cleaned_data.to}}.</p>
-    {% else %}
-        <h1>Partage "{{post.title}}" par e-mail</h1>
-        <form method="post">
-            {% csrf_token %}
-            {{form_post.as_p}}
-            <input class="btn btn-info mb-2" type="submit" value="Send e-mail">
-        </form>
-    {% endif %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card mb-2 mt-2">
+                {% if sent %}
+                    <div class="card-header">
+                        <h1>E-mail a été envoyé</h1>
+                        <p>"{{post.title}}" a été envoyé à {{form_post.cleaned_data.to}}.</p>
+                    </div>
+                {% else %}
+                    <div class="card-body">
+                        <h3>Partage "{{post.title}}" par e-mail</h3>
+                        <form method="post">
+                            {% csrf_token %}
+                            {{form_post.as_p}}
+                            <input class="btn btn-info mb-2" type="submit" value="Envoyer mail">
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
